@@ -1,8 +1,10 @@
 ---
 title: "Assignment 1 - Data Cleaning - Instructions"
-author: "[FILL IN YOUR NAME]"
-date: "[FILL IN THE DATE]"
-output: html_document
+author: "Hanna Matera"
+date: "05/09/2019"
+output: 
+ md_document:
+    variant: markdown_github
 ---
 
 # Assignment 1, Language development in Autism Spectrum Disorder (ASD) - Brushing up your code skills
@@ -61,7 +63,7 @@ If you're not in a project in Rstudio, make sure to set your working directory h
 If you created an RStudio project, then your working directory (the directory with your data and code for these assignments) is the project directory.
 
 ```{r}
-pacman::p_load(tidyverse,janitor)
+pacman::p_load(tidyverse,janitor,plyr)
 ```
 
 Load the three data sets, after downloading them from dropbox and saving them in your working directory:
@@ -70,6 +72,9 @@ Load the three data sets, after downloading them from dropbox and saving them in
 * Word data: https://www.dropbox.com/s/8ng1civpl2aux58/token_train.csv?dl=0
 
 ```{r}
+demo_train <- read.csv("demo_train.csv",header=T, sep=",")
+LU_train <- read.csv("LU_train.csv", header=T, sep=",")
+token_train <- read.csv("token_train.csv",header=T, sep=",")
 
 ```
 
@@ -90,7 +95,19 @@ Tip: look through the chapter on data transformation in R for data science (http
 
 
 ```{r}
+qplot(sample=LU_train$CHI_MLU,stat="qq")
+qplot(sample=LU_train$MOT_MLU,stat="qq")
+# how to summarize the data 
 
+#2a:
+#changing to uppercase
+demo_train$Child.ID <- toupper(demo_train$Child.ID)
+demo_train$Ethnicity <- toupper(demo_train$Ethnicity)
+
+LU_train$SUBJ <- toupper(LU_train$SUBJ)
+
+token_train$SUBJ <- toupper(token_train$SUBJ)
+ 
 ```
 
 2b. Find a way to homogeneize the way "visit" is reported (visit1 vs. 1).
@@ -99,7 +116,9 @@ Tip: The stringr package is what you need. str_extract () will allow you to extr
 
 
 ```{r}
-
+#extracting just a number from a "visit" column 
+LU_train$VISIT <- str_extract(LU_train$VISIT, "\\d")
+token_train$VISIT <- str_extract(token_train$VISIT, "\\d")
 
 ```
 
@@ -111,6 +130,11 @@ Tip: You can either have one line of code for each child name that is to be chan
 
 
 ```{r}
+#removing punctuations ??????????
+#names <- demo_train$Child.ID
+#demo_train$Child.ID <- str_replace_all(names,"."," ")
+
+
 
 ```
 
@@ -147,7 +171,12 @@ Most variables should make sense, here the less intuitive ones.
 Feel free to rename the variables into something you can remember (i.e. nonVerbalIQ, verbalIQ)
 
 ```{r}
+#leaving out designated columns 
+demo_train_sel <- select(demo_train, c(Child.ID,Visit,Diagnosis,Ethnicity,Gender,Age,ADOS,MullenRaw,ExpressiveLangRaw,Socialization))
 
+LU_train_sel <- select(LU_train,c(SUBJ,VISIT,MOT_MLU,CHI_MLU))
+
+token_train_sel <- select(token_train,c(SUBJ,VISIT,types_MOT,types_CHI,tokens_MOT,tokens_CHI))
 ```
 
 2e. Finally we are ready to merge all the data sets into just one. 
@@ -157,7 +186,18 @@ Some things to pay attention to:
 * make sure to understand whether (and if so why) there are NAs in the dataset (e.g. some measures were not taken at all visits, some recordings were lost or permission to use was withdrawn)
 
 ```{r}
+#renaming columns in demo_train_sel
 
+names(demo_train_sel)[1] <- "SUBJ"
+names(demo_train_sel)[2] <- "VISIT"
+
+#merging data frames by subject
+
+new <- merge(demo_train_sel,LU_train_sel,by="SUBJ")
+
+merged<- merge(new,token_train_sel,by="SUBJ")
+
+#why do I get visit.x and visit.y ???? +all the NAs? (what shall i do with guys who only had 1 visit ? like A.A etc.)+ Diagnosis fucked up ~now there are only B's
 
 ```
 
@@ -173,6 +213,14 @@ A possible way to do so:
 
 
 ```{r}
+#? how to fix the visit thingy 
+
+#visit1 <- subset(merged,select=VISIT==1)
+#visit1 <- select(merged,c(SUBJ,VISIT,ADOS,MullenRaw,ExpressiveLangRaw))
+
+
+#merge(merged,visit1,by="SUBJ")
+
 
 ```
 
@@ -184,6 +232,17 @@ Now we want to
 * Save the data set using into a csv file. Hint: look into write.csv()
 
 ```{r}
+
+#anonymizing 
+
+# gender 
+
+merged$Gender <- ifelse(merged$Gender==1,"F","M")
+
+#DIAGNOSIS~ sth is wrong here
+
+merged$Diagnosis <- ifelse(merged$Diagnosis=="A","ASD","TD")
+
 
 ```
 
