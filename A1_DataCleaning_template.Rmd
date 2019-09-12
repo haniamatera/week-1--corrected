@@ -97,10 +97,10 @@ Tip: look through the chapter on data transformation in R for data science (http
 ```{r}
 qplot(sample=LU_train$CHI_MLU,stat="qq")
 qplot(sample=LU_train$MOT_MLU,stat="qq")
-# how to summarize the data 
+
 
 #2a:
-#changing to uppercase
+#changing to uppercase to homogenize it
 demo_train$Child.ID <- toupper(demo_train$Child.ID)
 demo_train$Ethnicity <- toupper(demo_train$Ethnicity)
 
@@ -130,11 +130,11 @@ Tip: You can either have one line of code for each child name that is to be chan
 
 
 ```{r}
-#removing punctuations ??????????
-#names <- demo_train$Child.ID
-#demo_train$Child.ID <- str_replace_all(names,"."," ")
+#removing punctuations 
 
-
+demo_train$Child.ID <- str_replace_all(demo_train$Child.ID,"[[:punct:]]","")
+LU_train$SUBJ <- str_replace_all(LU_train$SUBJ,"[[:punct:]]","")
+token_train$SUBJ <- str_replace_all(token_train$SUBJ,"[[:punct:]]","")
 
 ```
 
@@ -193,11 +193,11 @@ names(demo_train_sel)[2] <- "VISIT"
 
 #merging data frames by subject
 
-new <- merge(demo_train_sel,LU_train_sel,by="SUBJ")
+new <- merge(demo_train_sel,LU_train_sel,by=c("SUBJ","VISIT"))
+merged<- merge(new,token_train_sel,by=c("SUBJ","VISIT"))
 
-merged<- merge(new,token_train_sel,by="SUBJ")
 
-#why do I get visit.x and visit.y ???? +all the NAs? (what shall i do with guys who only had 1 visit ? like A.A etc.)+ Diagnosis fucked up ~now there are only B's
+
 
 ```
 
@@ -213,13 +213,13 @@ A possible way to do so:
 
 
 ```{r}
-#? how to fix the visit thingy 
+# only visit 1 
 
-#visit1 <- subset(merged,select=VISIT==1)
-#visit1 <- select(merged,c(SUBJ,VISIT,ADOS,MullenRaw,ExpressiveLangRaw))
+visit1 <- subset(merged,select=VISIT==1)
+visit1 <- select(merged,c(SUBJ,VISIT,ADOS,MullenRaw,ExpressiveLangRaw))
 
 
-#merge(merged,visit1,by="SUBJ")
+merge(merged,visit1,by="SUBJ")
 
 
 ```
@@ -233,7 +233,12 @@ Now we want to
 
 ```{r}
 
+library(digest)
+
 #anonymizing 
+
+merged$SUBJ <- as.numeric(as.factor(merged$SUBJ))
+
 
 # gender 
 
